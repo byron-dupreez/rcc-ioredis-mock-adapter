@@ -8,8 +8,8 @@ const redis = require('../rcc-ioredis-mock-adapter');
 const host0 = redis.getDefaultHost();
 const port0 = redis.getDefaultPort();
 
-const host1 = 'localhost';
-const port1 = 6379;
+const host1 = '127.0.0.1';
+const port1 = 9999;
 
 function addEventListeners(redisClient, desc, startMs, customOnError) {
   const [host, port] = redisClient.resolveHostAndPort();
