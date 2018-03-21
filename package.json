@@ -1,6 +1,6 @@
 {
   "name": "rcc-ioredis-mock-adapter",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Wraps and adapts the 'ioredis-mock' module & its Redis client instances to be used with the 'redis-client-cache' module",
   "author": "Byron du Preez",
   "license": "Apache-2.0",
@@ -14,7 +14,7 @@
   "dependencies": {
     "ioredis": "3.2.2",
     "ioredis-mock": "3.6.4",
-    "rcc-core": "1.0.3"
+    "rcc-core": "1.0.4"
   },
   "devDependencies": {
     "tape": "^4.9.0"
