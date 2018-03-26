@@ -1,5 +1,9 @@
 ## Changes
 
+### 1.0.8
+- Refactored code to attempt to deal with the fact that the mocked `ioredis` functions are installed on EACH RedisMock 
+  instance and NOT on their prototype object
+
 ### 1.0.7
 - Moved all fixing of RedisClient functions and adaptation of the RedisClient prototype to happen at module load time 
   in order to fix sequencing bugs where promise-returning "Async" functions installed later by `redis-client-cache` 

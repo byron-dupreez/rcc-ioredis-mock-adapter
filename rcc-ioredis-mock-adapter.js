@@ -17,61 +17,8 @@ exports.defaultPort = defaultPort;
 
 exports.createClient = createClient;
 
-exports.getClientFunction = getClientFunction;
-exports.setClientFunction = setClientFunction;
-exports.deleteClientFunction = deleteClientFunction;
-
 exports.isMovedError = isMovedError;
 exports.resolveHostAndPortFromMovedError = resolveHostAndPortFromMovedError;
-
-function fixRedisClientFunctions() {
-  const prototype = IoRedisMock.prototype;
-
-  // If client is missing an `end` method then use its `quit` method as an `end` method
-  if (!prototype.end) {
-    console.log('Adding missing `end` function to `ioredis-mock` client prototype');
-    prototype.end = endViaQuit;
-  }
-}
-
-function adaptRedisClient() {
-  const prototype = IoRedisMock.prototype;
-
-  if (!prototype.getAdapter) {
-    prototype.getAdapter = getAdapter;
-  }
-
-  if (!prototype.getOptions) {
-    prototype.getOptions = getOptions;
-  }
-
-  if (!prototype.isClosing) {
-    prototype.isClosing = isClosing;
-  }
-
-  if (!prototype.resolveHostAndPort) {
-    prototype.resolveHostAndPort = resolveHostAndPort;
-  }
-
-  if (!prototype.addEventListeners) {
-    prototype.addEventListeners = addEventListeners;
-  }
-
-  if (!prototype.getFunction) {
-    prototype.getFunction = getClientFunction;
-  }
-
-  if (!prototype.setFunction) {
-    prototype.setFunction = setClientFunction;
-  }
-
-  if (!prototype.deleteFunction) {
-    prototype.deleteFunction = deleteClientFunction;
-  }
-}
-
-fixRedisClientFunctions();
-adaptRedisClient();
 
 /**
  * Creates a new RedisClient instance.
@@ -84,19 +31,64 @@ function createClient(redisClientOptions) {
   if (!client._options) {
     client._options = redisClientOptions;
   }
+  fixRedisClientFunctions(client);
+  adaptRedisClient(client);
+
   return client;
 }
 
-function getClientFunction(fnName) {
-  return IoRedisMock.prototype[fnName];
+function fixRedisClientFunctions(client) {
+  // If client is missing an `end` method then use its `quit` method as an `end` method
+  if (!client.end) {
+    // console.log('Adding missing `end` function to `ioredis-mock` client instance');
+    client.end = endViaQuit;
+  }
 }
 
-function setClientFunction(fnName, fn) {
-  IoRedisMock.prototype[fnName] = fn;
+function adaptRedisClient(client) {
+  if (!client.getAdapter) {
+    client.getAdapter = getAdapter;
+  }
+
+  if (!client.getOptions) {
+    client.getOptions = getOptions;
+  }
+
+  if (!client.isClosing) {
+    client.isClosing = isClosing;
+  }
+
+  if (!client.resolveHostAndPort) {
+    client.resolveHostAndPort = resolveHostAndPort;
+  }
+
+  if (!client.addEventListeners) {
+    client.addEventListeners = addEventListeners;
+  }
+
+  if (!client.getFunction) {
+    client.getFunction = getFunction;
+  }
+
+  if (!client.setFunction) {
+    client.setFunction = setFunction;
+  }
+
+  if (!client.deleteFunction) {
+    client.deleteFunction = deleteFunction;
+  }
 }
 
-function deleteClientFunction(fnName) {
-  delete IoRedisMock.prototype[fnName];
+function getFunction(fnName) {
+  return this[fnName];
+}
+
+function setFunction(fnName, fn) {
+  this[fnName] = fn;
+}
+
+function deleteFunction(fnName) {
+  delete this[fnName];
 }
 
 /**
