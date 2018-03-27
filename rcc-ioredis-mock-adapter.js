@@ -32,6 +32,15 @@ const redisMockExample = new RedisMock();
 const redisMockFnNames = Object.getOwnPropertyNames(redisMockExample)
   .filter(n => typeof redisMockExample[n] === 'function');
 
+function fixRedisClientFunctions() {
+  // If RedisMock is missing an `end` method then use its `quit` method as an `end` method
+  if (!getClientFunction('end')) {
+    setClientFunction('end', endViaQuit);
+  }
+}
+
+fixRedisClientFunctions();
+
 /**
  * Creates a new RedisClient instance.
  * NB: Add/remove any functions that you need to change via `setClientFunction`/`deleteClientFunction` BEFORE you create
@@ -46,19 +55,10 @@ function createClient(redisClientOptions) {
   if (!client._options) {
     client._options = redisClientOptions;
   }
-  fixRedisClientFunctions(client);
-  adaptRedisClient(client);
   updateClientWithClientFunctions(client);
+  adaptRedisClient(client);
 
   return client;
-}
-
-function fixRedisClientFunctions(client) {
-  // If client is missing an `end` method then use its `quit` method as an `end` method
-  if (!client.end) {
-    // console.log('Adding missing `end` function to `ioredis-mock` client instance');
-    client.end = endViaQuit;
-  }
 }
 
 function adaptRedisClient(client) {
