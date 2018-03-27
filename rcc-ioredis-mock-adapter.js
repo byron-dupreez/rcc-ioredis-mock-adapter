@@ -2,7 +2,7 @@
 
 const rccCore = require('rcc-core');
 
-const IoRedisMock = require('ioredis-mock');
+const RedisMock = require('ioredis-mock');
 const ReplyError = require('ioredis').ReplyError;
 exports.ReplyError = ReplyError;
 
@@ -17,22 +17,38 @@ exports.defaultPort = defaultPort;
 
 exports.createClient = createClient;
 
+const clientFunctionActions = [];
+const clientFunctions = {};
+const deletedClientFunctions = [];
+
+exports.getClientFunction = getClientFunction;
+exports.setClientFunction = setClientFunction;
+exports.deleteClientFunction = deleteClientFunction;
+
 exports.isMovedError = isMovedError;
 exports.resolveHostAndPortFromMovedError = resolveHostAndPortFromMovedError;
 
+const redisMockExample = new RedisMock();
+const redisMockFnNames = Object.getOwnPropertyNames(redisMockExample)
+  .filter(n => typeof redisMockExample[n] === 'function');
+
 /**
  * Creates a new RedisClient instance.
+ * NB: Add/remove any functions that you need to change via `setClientFunction`/`deleteClientFunction` BEFORE you create
+ * any RedisClient mock instance via `createClient` - otherwise the instance will NOT see any such function changes made
+ * after it is created.
  * @param {RedisClientOptions|undefined} [redisClientOptions] - the options to use to construct the new Redis client
  *        instance
  * @return {RedisClient} returns the new RedisClient instance
  */
 function createClient(redisClientOptions) {
-  const client = new IoRedisMock(redisClientOptions);
+  const client = new RedisMock(redisClientOptions);
   if (!client._options) {
     client._options = redisClientOptions;
   }
   fixRedisClientFunctions(client);
   adaptRedisClient(client);
+  updateClientWithClientFunctions(client);
 
   return client;
 }
@@ -79,15 +95,69 @@ function adaptRedisClient(client) {
   }
 }
 
+function getClientFunction(fnName) {
+  return clientFunctions[fnName] || redisMockExample[fnName];
+}
+
+function setClientFunction(fnName, fn) {
+  let origFnName = undefined;
+  for (let i = 0; i < redisMockFnNames.length; ++i) {
+    let n = redisMockFnNames[i];
+    if (redisMockExample[n] === fn) {
+      origFnName = n;
+      break;
+    }
+  }
+  const action = {action: 'set', fnName: fnName, fn: fn, origFnName: origFnName};
+  clientFunctionActions.push(action);
+
+  clientFunctions[fnName] = fn;
+  const pos = deletedClientFunctions.indexOf(fnName);
+  if (pos !== -1) {
+    deletedClientFunctions.splice(pos, 1);
+  }
+
+  return action;
+}
+
+function deleteClientFunction(fnName) {
+  clientFunctionActions.push({action: 'del', fnName: fnName});
+
+  delete clientFunctions[fnName];
+  if (!deletedClientFunctions.includes(fnName)) {
+    deletedClientFunctions.push(fnName);
+  }
+}
+
+function updateClientWithClientFunctions(client) {
+  clientFunctionActions.forEach(action => {
+    const fnName = action.fnName;
+    const origFnName = action.origFnName;
+
+    switch (action.action) {
+      case 'set':
+        client[fnName] = origFnName ? client[origFnName] : action.fn;
+        break;
+
+      case 'del':
+        delete client[fnName];
+        break;
+    }
+  });
+}
+
 function getFunction(fnName) {
-  return this[fnName];
+  return getClientFunction(fnName);
 }
 
 function setFunction(fnName, fn) {
-  this[fnName] = fn;
+  const action = setClientFunction(fnName, fn);
+  const origFnName = action.origFnName;
+  this[fnName] = origFnName ? this[origFnName] : fn;
 }
 
 function deleteFunction(fnName) {
+  deleteClientFunction(fnName);
   delete this[fnName];
 }
 
@@ -116,6 +186,11 @@ function resolveHostAndPortFromMovedError(movedError) {
   throw new Error(`Unexpected ioredis-mock client "moved" ReplyError - ${movedError}`);
 }
 
+/**
+ * Simulates the missing `end` function by delegating to the `quit` function.
+ * @param {boolean|undefined} [flush] - emulates the optional flush argument of other implementations' `end` functions
+ * @returns {*} the result returned by `quit`
+ */
 function endViaQuit(flush) {
   let args = arguments;
 

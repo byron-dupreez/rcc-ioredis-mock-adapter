@@ -1,5 +1,10 @@
 ## Changes
 
+### 1.0.9
+- Refactored code to deal with the fact that the mocked `ioredis` functions are installed on EACH RedisMock instance and 
+  NOT on their prototype object by instead recording module-level client function actions and applying these actions on 
+  each client during creation
+  
 ### 1.0.8
 - Refactored code to attempt to deal with the fact that the mocked `ioredis` functions are installed on EACH RedisMock 
   instance and NOT on their prototype object
