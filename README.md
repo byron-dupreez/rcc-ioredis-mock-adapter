@@ -1,4 +1,4 @@
-# rcc-ioredis-mock-adapter v1.0.10
+# rcc-ioredis-mock-adapter v1.0.11
 Wraps and adapts the 'ioredis-mock' module and its Redis client instances to be used with the 'redis-client-cache' module
 
 Main module:

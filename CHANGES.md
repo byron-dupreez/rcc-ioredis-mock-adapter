@@ -1,5 +1,8 @@
 ## Changes
 
+### 1.0.11
+- Updated rcc-core dependency
+
 ### 1.0.10
 - Fix to register replacement for missing `end` function upfront
 
