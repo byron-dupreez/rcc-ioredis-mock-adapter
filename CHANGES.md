@@ -1,5 +1,8 @@
 ## Changes
 
+### 1.0.12
+- Updated dependencies
+
 ### 1.0.11
 - Updated rcc-core dependency
 
